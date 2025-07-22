@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
+require('dotenv').config();
+const mongoose = require('mongoose');
 
 const Listing = require("./models/listing.js");
 const Review = require("./models/review.js");
@@ -11,9 +13,13 @@ const app = express();
 
 
 // MongoDB Connection
-const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
-
-main().catch((err) => console.log("MongoDB Connection Error:", err));
+// With this:
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log("Connected to MongoDB Atlas"))
+.catch(err => console.error("MongoDB Connection Error:", err));
 
 async function main() {
   await mongoose.connect(MONGO_URL);
