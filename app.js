@@ -3,30 +3,27 @@ const mongoose = require("mongoose");
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
-require('dotenv').config();
-const mongoose = require('mongoose');
 
 const Listing = require("./models/listing.js");
 const Review = require("./models/review.js");
+const User = require("./models/user.js");
 
 const app = express();
 
-
+// =======================
 // MongoDB Connection
-// With this:
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log("Connected to MongoDB Atlas"))
-.catch(err => console.error("MongoDB Connection Error:", err));
+// =======================
+const MONGO_URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wanderlust";
 
+main().catch((err) => console.log("❌ MongoDB Connection Error:", err));
 async function main() {
   await mongoose.connect(MONGO_URL);
   console.log("✅ Connected to MongoDB");
 }
 
+// =======================
 // View Engine and Middleware Setup
+// =======================
 app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -63,7 +60,7 @@ app.post("/listings", async (req, res) => {
   res.redirect("/listings");
 });
 
-// Show Listing Details (with reviews)
+// Show Listing Details
 app.get("/listings/:id", async (req, res) => {
   const { id } = req.params;
   const listing = await Listing.findById(id).populate("reviews");
@@ -92,15 +89,13 @@ app.delete("/listings/:id", async (req, res) => {
   res.redirect("/listings");
 });
 
-// Add Review to Listing
+// Add Review
 app.post("/listings/:id/review", async (req, res) => {
   const listing = await Listing.findById(req.params.id);
   const newReview = new Review(req.body.review);
-
   listing.reviews.push(newReview);
   await newReview.save();
   await listing.save();
-
   console.log("📝 New Review:", newReview);
   res.redirect(`/listings/${listing._id}`);
 });
@@ -110,13 +105,11 @@ app.get("/about", (req, res) => {
   res.render("listings/about");
 });
 
-// Server Listening
-app.listen(8080, () => {
-  console.log("🚀 Server is running on http://localhost:8080");
-});
-const User = require("./models/user");
+// =======================
+// Auth Routes
+// =======================
 
-// ── Sign-Up ─────────────────────────────────────────
+// Sign-Up
 app.get("/signup", (req, res) => {
   res.render("auth/signup.ejs");
 });
@@ -126,15 +119,14 @@ app.post("/signup", async (req, res) => {
     const { email, password } = req.body.user;
     const user = new User({ email, password });
     await user.save();
-    // TODO: create session / flash message
     res.redirect("/login");
   } catch (e) {
-    console.error("Sign-up error:", e);
+    console.error("❌ Sign-up error:", e);
     res.render("auth/signup.ejs", { error: "Email already used." });
   }
 });
 
-// ── Log-In ─────────────────────────────────────────
+// Log-In
 app.get("/login", (req, res) => {
   res.render("auth/login.ejs");
 });
@@ -145,7 +137,13 @@ app.post("/login", async (req, res) => {
   if (!user || !(await user.isValidPassword(password))) {
     return res.render("auth/login.ejs", { error: "Invalid credentials." });
   }
-  // TODO: establish session here
   res.redirect("/listings");
 });
 
+// =======================
+// Server Start
+// =======================
+const port = process.env.PORT || 8080;
+app.listen(port, () => {
+  console.log(`🚀 Server is running on http://localhost:${port}`);
+});
