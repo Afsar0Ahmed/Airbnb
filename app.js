@@ -1,97 +1,145 @@
 const express = require("express");
-const app = express();
 const mongoose = require("mongoose");
-const Listing = require("./models/listing.js");
-const ejsMate = require('ejs-mate')
 const path = require("path");
 const methodOverride = require("method-override");
+const ejsMate = require("ejs-mate");
 
+const Listing = require("./models/listing.js");
+const Review = require("./models/review.js");
+
+const app = express();
+
+
+// MongoDB Connection
 const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
 
-main()
-  .then(() => {
-    console.log("connected to DB");
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+main().catch((err) => console.log("MongoDB Connection Error:", err));
 
 async function main() {
   await mongoose.connect(MONGO_URL);
+  console.log("✅ Connected to MongoDB");
 }
-app.engine('ejs', ejsMate);
 
+// View Engine and Middleware Setup
+app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 
-app.get("/", (req, res) => {
-  res.send("Hi, I am root");
+// =======================
+// Routes
+// =======================
+
+// Home Route
+app.get("/", async (req, res) => {
+  const allListings = await Listing.find({});
+  res.render("listings/index.ejs", { allListings });
 });
 
-//Index Route
+// Index - All Listings
 app.get("/listings", async (req, res) => {
   const allListings = await Listing.find({});
   res.render("listings/index.ejs", { allListings });
 });
 
-//New Route
+// New Listing Form
 app.get("/listings/new", (req, res) => {
   res.render("listings/new.ejs");
 });
 
-//Show Route
-app.get("/listings/:id", async (req, res) => {
-  let { id } = req.params;
-  const listing = await Listing.findById(id);
-  res.render("listings/show.ejs", { listing });
-});
-
-//Create Route
+// Create Listing
 app.post("/listings", async (req, res) => {
   const newListing = new Listing(req.body.listing);
   await newListing.save();
   res.redirect("/listings");
 });
 
-//Edit Route
+// Show Listing Details (with reviews)
+app.get("/listings/:id", async (req, res) => {
+  const { id } = req.params;
+  const listing = await Listing.findById(id).populate("reviews");
+  res.render("listings/show.ejs", { listing });
+});
+
+// Edit Listing Form
 app.get("/listings/:id/edit", async (req, res) => {
-  let { id } = req.params;
+  const { id } = req.params;
   const listing = await Listing.findById(id);
   res.render("listings/edit.ejs", { listing });
 });
 
-//Update Route
+// Update Listing
 app.put("/listings/:id", async (req, res) => {
-  let { id } = req.params;
+  const { id } = req.params;
   await Listing.findByIdAndUpdate(id, { ...req.body.listing });
   res.redirect(`/listings/${id}`);
 });
 
-//Delete Route
+// Delete Listing
 app.delete("/listings/:id", async (req, res) => {
-  let { id } = req.params;
-  let deletedListing = await Listing.findByIdAndDelete(id);
-  console.log(deletedListing);
+  const { id } = req.params;
+  const deletedListing = await Listing.findByIdAndDelete(id);
+  console.log("🗑️ Deleted:", deletedListing);
   res.redirect("/listings");
 });
 
-// app.get("/testListing", async (req, res) => {
-//   let sampleListing = new Listing({
-//     title: "My New Villa",
-//     description: "By the beach",
-//     price: 1200,
-//     location: "Calangute, Goa",
-//     country: "India",
-//   });
+// Add Review to Listing
+app.post("/listings/:id/review", async (req, res) => {
+  const listing = await Listing.findById(req.params.id);
+  const newReview = new Review(req.body.review);
 
-//   await sampleListing.save();
-//   console.log("sample was saved");
-//   res.send("successful testing");
-// });
+  listing.reviews.push(newReview);
+  await newReview.save();
+  await listing.save();
 
-app.listen(8080, () => {
-  console.log("server is listening to port 8080");
+  console.log("📝 New Review:", newReview);
+  res.redirect(`/listings/${listing._id}`);
 });
+
+// About Page
+app.get("/about", (req, res) => {
+  res.render("listings/about");
+});
+
+// Server Listening
+app.listen(8080, () => {
+  console.log("🚀 Server is running on http://localhost:8080");
+});
+const User = require("./models/user");
+
+// ── Sign-Up ─────────────────────────────────────────
+app.get("/signup", (req, res) => {
+  res.render("auth/signup.ejs");
+});
+
+app.post("/signup", async (req, res) => {
+  try {
+    const { email, password } = req.body.user;
+    const user = new User({ email, password });
+    await user.save();
+    // TODO: create session / flash message
+    res.redirect("/login");
+  } catch (e) {
+    console.error("Sign-up error:", e);
+    res.render("auth/signup.ejs", { error: "Email already used." });
+  }
+});
+
+// ── Log-In ─────────────────────────────────────────
+app.get("/login", (req, res) => {
+  res.render("auth/login.ejs");
+});
+
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body.user;
+  const user = await User.findOne({ email });
+  if (!user || !(await user.isValidPassword(password))) {
+    return res.render("auth/login.ejs", { error: "Invalid credentials." });
+  }
+  // TODO: establish session here
+  res.redirect("/listings");
+});
+

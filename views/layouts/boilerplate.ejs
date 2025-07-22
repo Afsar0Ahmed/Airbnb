@@ -1,12 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>wanderlust</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wanderlust</title>
+
+  <!-- Tailwind CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
 </head>
-<body>
-    <h1>This is my Travel Website</h1>
-    <div class="container"> <%- body %></div>
+<body class="min-h-screen bg-gray-50 text-gray-800">
+
+  <!-- Optional site header or navbar -->
+  <%- include('./includes/navbar') %>
+
+  <!-- Main content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <%- body %>
+  </main>
+
 </body>
 </html>

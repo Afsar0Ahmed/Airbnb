@@ -1,54 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    
-    <title>Wanderlust</title>
-  </head>
-  <body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <%- include("../includes/navbar.ejs")%>
-    
-    <div class="row">
-      <div class="title col-8 offset-3">
-        <h3>Listing Details</h3></div>
-    
-    <div class="card col-8 offset-3" style="width: 25rem;">
-      <img src= "<%= listing.image%>"  class="card-img-top"  alt="...">
+  <title>Wanderlust - Listing Details</title>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" />
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <style>
+    body {
+      background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e') no-repeat center center fixed;
+      background-size: cover;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .bg-glass {
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .card-img-top {
+      border-top-left-radius: 15px;
+      border-top-right-radius: 15px;
+    }
+
+    .btn-outline-primary:hover, .btn-primary:hover {
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    a.btn i {
+      margin-right: 6px;
+    }
+
+    textarea:focus, input:focus {
+      box-shadow: 0 0 5px rgba(0, 123, 255, 0.5) !important;
+      border-color: #80bdff !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <%- include("../includes/navbar.ejs") %>
+
+  <!-- Container -->
+  <div class="container my-5">
+    <div class="mb-4">
+      <a href="/listings" class="btn btn-outline-light text-dark bg-white shadow-sm">
+        <i class="fa-solid fa-arrow-left"></i> Back to Listings
+      </a>
+    </div>
+
+    <div class="card bg-glass mx-auto" style="max-width: 32rem;">
+      <img src="<%= listing.image %>" class="card-img-top" alt="Listing Image">
+
       <div class="card-body">
-        <p class="card-text"><%= listing.description %><br>
-          <b><%= listing.title %></b><br>
-          &#x20B9;<b><%= listing.price.toLocaleString("en-IN") %></b><br>
-          <b><%= listing.location %></b><br>
-          <b><%= listing.country %></b>
-         
-
+        <h4 class="card-title fw-bold"><%= listing.title %></h4>
+        <p class="card-text">
+          <strong>Description:</strong> <%= listing.description %><br>
+          <strong>Price:</strong> ₹ <%= listing.price.toLocaleString("en-IN") %> per night<br>
+          <strong>Location:</strong> <%= listing.location %><br>
+          <strong>Country:</strong> <%= listing.country %><br>
+          <strong>Owner:</strong> <%= listing.owner %><br>
+          <strong>Average Rating:</strong> <%= listing.averageRating || "Not rated yet" %> ⭐
         </p>
-      </div>
-      <div class="button  " >
-        
-        <form action="/listings/<%= listing._id %>/edit">
-          <button>Edit</button>
-        </form>
-        <form method="POST" action="/listings/<%=listing._id%>?_method=DELETE">
-          <button>Delete</button>
-        </form>
-      </form>
 
+        <!-- Buttons -->
+        <div class="d-flex justify-content-between my-3">
+          <a href="/listings/<%= listing._id %>/edit" class="btn btn-primary w-45">
+            <i class="fa-solid fa-pen-to-square"></i> Edit
+          </a>
+          <form method="POST" action="/listings/<%= listing._id %>?_method=DELETE" class="w-45">
+            <button class="btn btn-outline-danger w-100" type="submit">
+              <i class="fa-solid fa-trash"></i> Delete
+            </button>
+          </form>
+        </div>
+
+        <a href="/contact-owner/<%= listing.ownerId %>" class="btn btn-outline-primary w-100 mb-3">
+          <i class="fa-solid fa-envelope"></i> Contact Owner
+        </a>
+
+        <!-- Review Form -->
+        <div class="bg-white p-4 rounded shadow-sm">
+          <h5 class="mb-3 text-primary"><i class="fa-solid fa-comment-dots"></i> Leave a Review</h5>
+          <form action="/listings/<%= listing._id %>/review" method="POST">
+            <div class="mb-3">
+              <label for="rating" class="form-label">Rating: 
+                <span id="ratingValue" class="fw-bold text-dark">3</span>/5
+              </label>
+              <input type="range" min="1" max="5" id="rating" name="review[rating]" class="form-range" value="3" oninput="document.getElementById('ratingValue').innerText = this.value;">
+            </div>
+
+            <div class="mb-3">
+              <label for="comment" class="form-label">Comment:</label>
+              <textarea name="review[comment]" id="comment" rows="4" class="form-control" placeholder="Write something..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-success w-100">
+              <i class="fa-solid fa-paper-plane"></i> Submit
+            </button>
+          </form>
+        </div>
       </div>
-      <div >
-       
-      </div>
-        
-      
-      </div>
-  
-  
     </div>
   </div>
-  </body>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
