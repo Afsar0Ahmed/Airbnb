@@ -1,38 +1,42 @@
-// ── Dependencies ─────────────────────────────────────────
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
-const dotenv = require("dotenv");
-dotenv.config();
 
-// ── Models ──────────────────────────────────────────────
 const Listing = require("./models/listing.js");
 const Review = require("./models/review.js");
 const User = require("./models/user.js");
 
 const app = express();
 
-// ── MongoDB Connection ──────────────────────────────────
+// ======================
+// MongoDB Connection
+// ======================
 const MONGO_URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wanderlust";
 
 async function main() {
   try {
-    await mongoose.connect(MONGO_URL);
+    await mongoose.connect(MONGO_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
     console.log("✅ Connected to MongoDB");
 
+    // Start the server only after DB is connected
     app.listen(8080, () => {
-      console.log("🚀 Server running on http://localhost:8080");
+      console.log("🚀 Server is running on http://localhost:8080");
     });
   } catch (err) {
     console.error("❌ MongoDB connection error:", err);
-    process.exit(1); // Stop execution if DB not connected
   }
 }
+
 main();
 
-// ── View Engine & Middleware ────────────────────────────
+// ======================
+// View Engine & Middleware
+// ======================
 app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -41,16 +45,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
-// ── Routes ──────────────────────────────────────────────
+// =======================
+// Routes
+// =======================
 
 // Home Route
 app.get("/", async (req, res) => {
-  try {
-    const allListings = await Listing.find({});
-    res.render("listings/index.ejs", { allListings });
-  } catch (e) {
-    res.status(500).send("Internal Server Error");
-  }
+  const allListings = await Listing.find({});
+  res.render("listings/index.ejs", { allListings });
 });
 
 // Index - All Listings
@@ -88,24 +90,28 @@ app.get("/listings/:id/edit", async (req, res) => {
 // Update Listing
 app.put("/listings/:id", async (req, res) => {
   const { id } = req.params;
-  await Listing.findByIdAndUpdate(id, req.body.listing);
+  await Listing.findByIdAndUpdate(id, { ...req.body.listing });
   res.redirect(`/listings/${id}`);
 });
 
 // Delete Listing
 app.delete("/listings/:id", async (req, res) => {
   const { id } = req.params;
-  await Listing.findByIdAndDelete(id);
+  const deletedListing = await Listing.findByIdAndDelete(id);
+  console.log("🗑️ Deleted:", deletedListing);
   res.redirect("/listings");
 });
 
-// Add Review
+// Add Review to Listing
 app.post("/listings/:id/review", async (req, res) => {
   const listing = await Listing.findById(req.params.id);
   const newReview = new Review(req.body.review);
+
   listing.reviews.push(newReview);
   await newReview.save();
   await listing.save();
+
+  console.log("📝 New Review:", newReview);
   res.redirect(`/listings/${listing._id}`);
 });
 
@@ -114,9 +120,7 @@ app.get("/about", (req, res) => {
   res.render("listings/about");
 });
 
-// ── Auth Routes ─────────────────────────────────────────
-
-// Sign-Up
+// ── Sign-Up ─────────────────────────────────────────
 app.get("/signup", (req, res) => {
   res.render("auth/signup.ejs");
 });
@@ -126,6 +130,7 @@ app.post("/signup", async (req, res) => {
     const { email, password } = req.body.user;
     const user = new User({ email, password });
     await user.save();
+    // TODO: create session / flash message
     res.redirect("/login");
   } catch (e) {
     console.error("Sign-up error:", e);
@@ -133,7 +138,7 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// Log-In
+// ── Log-In ─────────────────────────────────────────
 app.get("/login", (req, res) => {
   res.render("auth/login.ejs");
 });
@@ -141,11 +146,9 @@ app.get("/login", (req, res) => {
 app.post("/login", async (req, res) => {
   const { email, password } = req.body.user;
   const user = await User.findOne({ email });
-
   if (!user || !(await user.isValidPassword(password))) {
     return res.render("auth/login.ejs", { error: "Invalid credentials." });
   }
-
-  // TODO: Session handling
+  // TODO: establish session here
   res.redirect("/listings");
 });
