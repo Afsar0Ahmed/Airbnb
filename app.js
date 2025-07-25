@@ -6,21 +6,37 @@ const ejsMate = require("ejs-mate");
 
 const Listing = require("./models/listing.js");
 const Review = require("./models/review.js");
+const User = require("./models/user.js");
 
 const app = express();
 
-
+// ======================
 // MongoDB Connection
-const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
-
-main().catch((err) => console.log("MongoDB Connection Error:", err));
+// ======================
+const MONGO_URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wanderlust";
 
 async function main() {
-  await mongoose.connect(MONGO_URL);
-  console.log("✅ Connected to MongoDB");
+  try {
+    await mongoose.connect(MONGO_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log("✅ Connected to MongoDB");
+
+    // Start the server only after DB is connected
+    app.listen(8080, () => {
+      console.log("🚀 Server is running on http://localhost:8080");
+    });
+  } catch (err) {
+    console.error("❌ MongoDB connection error:", err);
+  }
 }
 
-// View Engine and Middleware Setup
+main();
+
+// ======================
+// View Engine & Middleware
+// ======================
 app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -57,7 +73,7 @@ app.post("/listings", async (req, res) => {
   res.redirect("/listings");
 });
 
-// Show Listing Details (with reviews)
+// Show Listing Details
 app.get("/listings/:id", async (req, res) => {
   const { id } = req.params;
   const listing = await Listing.findById(id).populate("reviews");
@@ -104,12 +120,6 @@ app.get("/about", (req, res) => {
   res.render("listings/about");
 });
 
-// Server Listening
-app.listen(8080, () => {
-  console.log("🚀 Server is running on http://localhost:8080");
-});
-const User = require("./models/user");
-
 // ── Sign-Up ─────────────────────────────────────────
 app.get("/signup", (req, res) => {
   res.render("auth/signup.ejs");
@@ -142,4 +152,3 @@ app.post("/login", async (req, res) => {
   // TODO: establish session here
   res.redirect("/listings");
 });
-
