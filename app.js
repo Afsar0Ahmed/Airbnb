@@ -13,15 +13,17 @@ const app = express();
 // ======================
 // MongoDB Connection
 // ======================
+// ======================
+// MongoDB Connection
+// ======================
 const MONGO_URL =
   process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wanderlust";
 
 async function main() {
   try {
-    await mongoose.connect(MONGO_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    // Mongoose 8+ doesn't need useNewUrlParser or useUnifiedTopology
+    await mongoose.connect(MONGO_URL);
+
     console.log("✅ Connected to MongoDB");
 
     // Start server only after DB is connected
@@ -31,10 +33,14 @@ async function main() {
     });
   } catch (err) {
     console.error("❌ MongoDB connection error:", err);
+
+    // Optional: exit app if DB fails
+    process.exit(1);
   }
 }
 
 main();
+
 
 // ======================
 // View Engine & Middleware
