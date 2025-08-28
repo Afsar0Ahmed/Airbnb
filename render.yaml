@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: wanderlust-app
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: npm ci
+    startCommand: npm start
+    envVars:
+      - key: MONGO_URL
+        sync: false
+      - key: NODE_ENV
+        value: production

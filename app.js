@@ -6,14 +6,15 @@ const ejsMate = require("ejs-mate");
 
 const Listing = require("./models/listing.js");
 const Review = require("./models/review.js");
-const User = require("./models/user.js");
+const User = require("./models/User"); // ✅ clean import
 
 const app = express();
 
 // ======================
 // MongoDB Connection
 // ======================
-const MONGO_URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wanderlust";
+const MONGO_URL =
+  process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wanderlust";
 
 async function main() {
   try {
@@ -23,9 +24,10 @@ async function main() {
     });
     console.log("✅ Connected to MongoDB");
 
-    // Start the server only after DB is connected
-    app.listen(8080, () => {
-      console.log("🚀 Server is running on http://localhost:8080");
+    // Start server only after DB is connected
+    const PORT = process.env.PORT || 8080;
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`🚀 Server is running on port ${PORT}`);
     });
   } catch (err) {
     console.error("❌ MongoDB connection error:", err);
@@ -48,6 +50,9 @@ app.use(express.static(path.join(__dirname, "public")));
 // =======================
 // Routes
 // =======================
+
+// Health check
+app.get("/health", (req, res) => res.json({ status: "ok" }));
 
 // Home Route
 app.get("/", async (req, res) => {
@@ -77,6 +82,7 @@ app.post("/listings", async (req, res) => {
 app.get("/listings/:id", async (req, res) => {
   const { id } = req.params;
   const listing = await Listing.findById(id).populate("reviews");
+  if (!listing) return res.status(404).send("Listing not found");
   res.render("listings/show.ejs", { listing });
 });
 
@@ -84,6 +90,7 @@ app.get("/listings/:id", async (req, res) => {
 app.get("/listings/:id/edit", async (req, res) => {
   const { id } = req.params;
   const listing = await Listing.findById(id);
+  if (!listing) return res.status(404).send("Listing not found");
   res.render("listings/edit.ejs", { listing });
 });
 
@@ -105,9 +112,11 @@ app.delete("/listings/:id", async (req, res) => {
 // Add Review to Listing
 app.post("/listings/:id/review", async (req, res) => {
   const listing = await Listing.findById(req.params.id);
-  const newReview = new Review(req.body.review);
+  if (!listing) return res.status(404).send("Listing not found");
 
+  const newReview = new Review(req.body.review);
   listing.reviews.push(newReview);
+
   await newReview.save();
   await listing.save();
 
@@ -127,14 +136,14 @@ app.get("/signup", (req, res) => {
 
 app.post("/signup", async (req, res) => {
   try {
-    const { email, password } = req.body.user;
+    const { email, password } = req.body;
     const user = new User({ email, password });
     await user.save();
-    // TODO: create session / flash message
+    console.log("✅ New user saved:", user.email);
     res.redirect("/login");
-  } catch (e) {
-    console.error("Sign-up error:", e);
-    res.render("auth/signup.ejs", { error: "Email already used." });
+  } catch (err) {
+    console.error("❌ Signup Error:", err);
+    res.render("auth/signup.ejs", { error: "Email already in use." });
   }
 });
 
@@ -144,11 +153,19 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", async (req, res) => {
-  const { email, password } = req.body.user;
-  const user = await User.findOne({ email });
-  if (!user || !(await user.isValidPassword(password))) {
-    return res.render("auth/login.ejs", { error: "Invalid credentials." });
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user || !(await user.isValidPassword(password))) {
+      console.log("⚠️ Invalid login attempt:", email);
+      return res.render("auth/login.ejs", { error: "Invalid credentials." });
+    }
+
+    console.log("✅ User logged in:", user.email);
+    res.redirect("/listings");
+  } catch (err) {
+    console.error("❌ Login error:", err);
+    res.render("auth/login.ejs", { error: "Something went wrong." });
   }
-  // TODO: establish session here
-  res.redirect("/listings");
 });
