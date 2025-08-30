@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
+const bcrypt = require("bcryptjs");
 
 const Listing = require("./models/listing.js");
 const Review = require("./models/review.js");
@@ -131,47 +132,76 @@ app.post("/listings/:id/review", async (req, res) => {
 });
 
 // About Page
-app.get("/about", (req, res) => {
-  res.render("listings/about");
+// About Page
+app.get("/about", async (req, res) => {
+  try {
+    const allListings = await Listing.find({});
+    res.render("listings/about", { allListings });
+  } catch (err) {
+    console.error("❌ Error loading about page:", err);
+    res.status(500).send("Server Error");
+  }
 });
 
-// ── Sign-Up ─────────────────────────────────────────
-app.get("/signup", (req, res) => {
-  res.render("auth/signup.ejs");
-});
 
 app.post("/signup", async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = new User({ email, password });
+    
+    // Normalize email
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      console.log("❌ Email already exists:", normalizedEmail);
+      return res.render("auth/signup.ejs", { error: "Email already in use." });
+    }
+    
+    // Create and save user
+    const user = new User({ email: normalizedEmail, password });
     await user.save();
+    
     console.log("✅ New user saved:", user.email);
     res.redirect("/login");
   } catch (err) {
     console.error("❌ Signup Error:", err);
-    res.render("auth/signup.ejs", { error: "Email already in use." });
+    
+    // Handle duplicate key error specifically
+    if (err.code === 11000) {
+      return res.render("auth/signup.ejs", { error: "Email already in use." });
+    }
+    
+    res.render("auth/signup.ejs", { error: "Something went wrong. Try again." });
   }
 });
-
-// ── Log-In ─────────────────────────────────────────
-app.get("/login", (req, res) => {
-  res.render("auth/login.ejs");
-});
-
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
-
-    if (!user || !(await user.isValidPassword(password))) {
-      console.log("⚠️ Invalid login attempt:", email);
-      return res.render("auth/login.ejs", { error: "Invalid credentials." });
+    
+    console.log("🔍 Login attempt for:", email);
+    
+    // Find user
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      console.log("❌ User not found:", email);
+      return res.render("auth/login.ejs", { error: "Invalid email or password." });
     }
-
+    
+    console.log("👤 User found:", user.email);
+    
+    // Check password
+    const isMatch = await user.isValidPassword(password);
+    console.log("🔑 Password match:", isMatch);
+    
+    if (!isMatch) {
+      return res.render("auth/login.ejs", { error: "Invalid email or password." });
+    }
+    
     console.log("✅ User logged in:", user.email);
     res.redirect("/listings");
   } catch (err) {
-    console.error("❌ Login error:", err);
-    res.render("auth/login.ejs", { error: "Something went wrong." });
+    console.error("❌ Login Error:", err);
+    res.render("auth/login.ejs", { error: "Something went wrong. Try again." });
   }
 });
