@@ -5,46 +5,36 @@ const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const bcrypt = require("bcryptjs");
 
-const Listing = require("./models/listing.js");
-const Review = require("./models/review.js");
-const User = require("./models/User"); // ✅ clean import
+const Listing = require("./models/listing");
+const Review = require("./models/review");
+const User = require("./models/User");
 
 const app = express();
 
 // ======================
 // MongoDB Connection
 // ======================
-// ======================
-// MongoDB Connection
-// ======================
-const MONGO_URL =
-  process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wanderlust";
+const MONGO_URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wanderlust";
 
 async function main() {
   try {
-    // Mongoose 8+ doesn't need useNewUrlParser or useUnifiedTopology
     await mongoose.connect(MONGO_URL);
-
     console.log("✅ Connected to MongoDB");
 
-    // Start server only after DB is connected
     const PORT = process.env.PORT || 8080;
     app.listen(PORT, "0.0.0.0", () => {
-      console.log(`🚀 Server is running on port ${PORT}`);
+      console.log(`🚀 Server running on port ${PORT}`);
     });
   } catch (err) {
     console.error("❌ MongoDB connection error:", err);
-
-    // Optional: exit app if DB fails
     process.exit(1);
   }
 }
 
 main();
 
-
 // ======================
-// View Engine & Middleware
+// Middleware & Views
 // ======================
 app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
@@ -54,20 +44,20 @@ app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
-// =======================
+// ======================
 // Routes
-// =======================
+// ======================
 
-// Health check
+// Health Check
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 
-// Home Route
+// Home
 app.get("/", async (req, res) => {
   const allListings = await Listing.find({});
   res.render("listings/index.ejs", { allListings });
 });
 
-// Index - All Listings
+// Listings
 app.get("/listings", async (req, res) => {
   const allListings = await Listing.find({});
   res.render("listings/index.ejs", { allListings });
@@ -85,7 +75,7 @@ app.post("/listings", async (req, res) => {
   res.redirect("/listings");
 });
 
-// Show Listing Details
+// Show Listing
 app.get("/listings/:id", async (req, res) => {
   const { id } = req.params;
   const listing = await Listing.findById(id).populate("reviews");
@@ -111,12 +101,11 @@ app.put("/listings/:id", async (req, res) => {
 // Delete Listing
 app.delete("/listings/:id", async (req, res) => {
   const { id } = req.params;
-  const deletedListing = await Listing.findByIdAndDelete(id);
-  console.log("🗑️ Deleted:", deletedListing);
+  await Listing.findByIdAndDelete(id);
   res.redirect("/listings");
 });
 
-// Add Review to Listing
+// Add Review
 app.post("/listings/:id/review", async (req, res) => {
   const listing = await Listing.findById(req.params.id);
   if (!listing) return res.status(404).send("Listing not found");
@@ -127,81 +116,71 @@ app.post("/listings/:id/review", async (req, res) => {
   await newReview.save();
   await listing.save();
 
-  console.log("📝 New Review:", newReview);
   res.redirect(`/listings/${listing._id}`);
 });
 
-// About Page
-// About Page
+// About
 app.get("/about", async (req, res) => {
-  try {
-    const allListings = await Listing.find({});
-    res.render("listings/about", { allListings });
-  } catch (err) {
-    console.error("❌ Error loading about page:", err);
-    res.status(500).send("Server Error");
-  }
+  res.render("listings/about.ejs");
 });
 
+// ======================
+// AUTH ROUTES
+// ======================
 
+// GET Signup Page
+app.get("/signup", (req, res) => {
+  res.render("auth/signup.ejs");
+});
+
+// POST Signup
 app.post("/signup", async (req, res) => {
   try {
     const { email, password } = req.body;
-    
-    // Normalize email
+
     const normalizedEmail = email.toLowerCase().trim();
-    
-    // Check if user already exists
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
-      console.log("❌ Email already exists:", normalizedEmail);
       return res.render("auth/signup.ejs", { error: "Email already in use." });
     }
-    
-    // Create and save user
-    const user = new User({ email: normalizedEmail, password });
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const user = new User({ email: normalizedEmail, password: hashedPassword });
     await user.save();
-    
-    console.log("✅ New user saved:", user.email);
+
     res.redirect("/login");
   } catch (err) {
-    console.error("❌ Signup Error:", err);
-    
-    // Handle duplicate key error specifically
-    if (err.code === 11000) {
-      return res.render("auth/signup.ejs", { error: "Email already in use." });
-    }
-    
+    console.error(err);
     res.render("auth/signup.ejs", { error: "Something went wrong. Try again." });
   }
 });
+
+// GET Login Page
+app.get("/login", (req, res) => {
+  res.render("auth/login.ejs");
+});
+
+// POST Login
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    
-    console.log("🔍 Login attempt for:", email);
-    
-    // Find user
+
     const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
-      console.log("❌ User not found:", email);
       return res.render("auth/login.ejs", { error: "Invalid email or password." });
     }
-    
-    console.log("👤 User found:", user.email);
-    
-    // Check password
-    const isMatch = await user.isValidPassword(password);
-    console.log("🔑 Password match:", isMatch);
-    
+
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.render("auth/login.ejs", { error: "Invalid email or password." });
     }
-    
-    console.log("✅ User logged in:", user.email);
+
+    // TODO: Add session or JWT for logged-in state
     res.redirect("/listings");
   } catch (err) {
-    console.error("❌ Login Error:", err);
+    console.error(err);
     res.render("auth/login.ejs", { error: "Something went wrong. Try again." });
   }
 });
