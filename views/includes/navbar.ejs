@@ -1,13 +1,14 @@
 <!-- views/partials/_navbar.ejs -->
-<nav class="navbar navbar-expand-md navbar-light bg-light shadow-sm sticky-top">
+<nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm sticky-top">
   <div class="container-fluid">
     <!-- Logo -->
-    <a class="navbar-brand fw-bold text-danger" href="/">
-      <i class="fa fa-compass me-1"></i> Airnb
+    <a class="navbar-brand fw-bold text-danger d-flex align-items-center" href="/">
+      <i class="fa fa-compass me-2 text-gradient"></i> 
+      <span class="logo-text">Airnb</span>
     </a>
 
     <!-- Toggler for mobile view -->
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse"
             data-bs-target="#navbarNav" aria-controls="navbarNav"
             aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
@@ -17,32 +18,99 @@
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto align-items-center">
         <li class="nav-item">
-          <a class="nav-link" href="/">Home</a>
+          <a class="nav-link cool-link" href="/">Home</a>
         </li>
-
         <li class="nav-item">
-          <a class="nav-link" href="/listings/new">Add Listing</a>
+          <a class="nav-link cool-link" href="/listings/new">Add Listing</a>
         </li>
-
         <li class="nav-item">
-          <a class="nav-link" href="/about">About</a>
+          <a class="nav-link cool-link" href="/about">About</a>
         </li>
-
         <li class="nav-item">
-          <a class="nav-link" href="/signup">Sign Up</a>
+          <a class="nav-link cool-link" href="/signup">Sign Up</a>
         </li>
-
         <li class="nav-item">
-          <a class="nav-link" href="/login">Log In</a>
+          <a class="nav-link cool-link" href="/login">Log In</a>
         </li>
 
+        <!-- Search Box -->
         <li class="nav-item ms-3">
-          <form class="d-flex" role="search" action="/search" method="GET">
-            <input class="form-control me-2" name="query" type="search" placeholder="Search" aria-label="Search">
-            <button class="btn btn-outline-success" type="submit">Search</button>
-          </form>
-        </li>
-      </ul>
-    </div>
-  </div>
+          <form class="d-flex search-box" role="search" action="/search" method="GET">
+  <input class="form-control me-2" name="query" type="search" placeholder="Search..." aria-label="Search">
+  <button class="btn btn-gradient" type="submit">Search</button>
+
 </nav>
+
+
+<!-- Custom CSS -->
+<style>
+/* Gradient text for logo */
+.text-gradient {
+  background: linear-gradient(45deg, #ff4d4d, #ff914d);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: spin 4s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Logo text animation */
+.logo-text {
+  font-size: 1.3rem;
+  letter-spacing: 1px;
+  transition: color 0.3s ease-in-out;
+}
+.logo-text:hover {
+  color: #ff4d4d;
+}
+
+/* Hover underline animation */
+.cool-link {
+  position: relative;
+  display: inline-block;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+.cool-link::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -4px;
+  left: 0;
+  background: #ff4d4d;
+  transition: width 0.3s ease;
+}
+.cool-link:hover {
+  color: #ff4d4d !important;
+}
+.cool-link:hover::after {
+  width: 100%;
+}
+
+/* Gradient button */
+.btn-gradient {
+  background: linear-gradient(45deg, #ff4d4d, #ff914d);
+  border: none;
+  color: white;
+  font-weight: 500;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.btn-gradient:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(255, 77, 77, 0.4);
+}
+
+/* Search box styling */
+.search-box input {
+  border-radius: 25px;
+  transition: all 0.3s ease-in-out;
+}
+.search-box input:focus {
+  box-shadow: 0 0 8px rgba(255, 77, 77, 0.5);
+  border-color: #ff4d4d;
+}
+</style>
