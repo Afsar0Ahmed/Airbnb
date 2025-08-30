@@ -1,99 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/public/css/style.css">
-    <title>Edit Your Listing</title>
-    <style>
-      body {
-        background-color: #f8f9fa;
-      }
-      .form-card {
-        max-width: 700px;
-        margin: auto;
-        background: white;
-        padding: 30px;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      }
-      h3 {
-        font-weight: 600;
-        margin-bottom: 30px;
-      }
-      #imagePreview {
-        max-height: 250px;
-        border-radius: 8px;
-        object-fit: cover;
-      }
-    </style>
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Your Listing | Airbnb</title>
+  
+  <!-- Bootstrap & Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
-  <body>
-    <%- include("../includes/navbar.ejs") %>
+  <style>
+    body {
+      background: linear-gradient(to right, #ff9a9e, #fad0c4);
+      min-height: 100vh;
+    }
 
-    <div class="container mt-5">
-      <div class="form-card">
-        <h3 class="text-center">Edit Your Listing</h3>
+    .form-card {
+      max-width: 720px;
+      width: 100%;
+      background: white;
+      padding: 40px;
+      border-radius: 18px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      margin: auto; /* center horizontally */
+    }
+    .form-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+    }
 
-        <form method="POST" action="/listings/<%= listing._id %>?_method=PUT">
-          <div class="mb-3">
-            <label class="form-label">Title</label>
-            <input name="listing[title]" value="<%= listing.title %>" type="text" class="form-control" required />
+    h3 {
+      font-weight: 700;
+      margin-bottom: 25px;
+      color: #ff5a5f;
+    }
+
+    .form-control, .form-select {
+      border-radius: 10px;
+      transition: all 0.3s ease;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #ff5a5f;
+      box-shadow: 0 0 8px rgba(255, 90, 95, 0.4);
+    }
+
+    #imagePreview {
+      max-height: 260px;
+      border-radius: 12px;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+    #imagePreview:hover {
+      transform: scale(1.05);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff5a5f, #ff7e82);
+      border: none;
+      border-radius: 12px;
+      padding: 12px 40px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #ff7e82, #ff5a5f);
+      box-shadow: 0 6px 15px rgba(255, 90, 95, 0.4);
+    }
+  </style>
+</head>
+
+<body>
+  <%- include("../includes/navbar.ejs") %>
+
+  <!-- Container with top margin to avoid navbar overlap -->
+  <div class="container mt-5 pt-5 mb-5 d-flex justify-content-center">
+    <div class="form-card">
+      <h3 class="text-center"><i class="fa-solid fa-pen-to-square me-2"></i>Edit Your Listing</h3>
+
+      <form method="POST" action="/listings/<%= listing._id %>?_method=PUT">
+        <!-- Title -->
+        <div class="mb-3">
+          <label class="form-label">Title</label>
+          <input name="listing[title]" value="<%= listing.title %>" type="text" class="form-control" required />
+        </div>
+
+        <!-- Description -->
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea name="listing[description]" class="form-control" rows="4" required><%= listing.description %></textarea>
+        </div>
+
+        <!-- Image URL -->
+        <div class="mb-3">
+          <label class="form-label">Image URL</label>
+          <input name="listing[image]" value="<%= listing.image %>" type="text" class="form-control" required />
+          <div class="mt-3 text-center">
+            <img id="imagePreview" src="<%= listing.image %>" alt="Image preview" class="img-fluid shadow-sm" />
           </div>
+        </div>
 
-          <div class="mb-3">
-            <label class="form-label">Description</label>
-            <textarea name="listing[description]" class="form-control" rows="4" required><%= listing.description %></textarea>
-          </div>
+        <!-- Category -->
+        <div class="mb-3">
+          <label class="form-label">Category</label>
+          <select name="listing[category]" class="form-select" required>
+            <option value="villa" <%= listing.category === 'villa' ? 'selected' : '' %>>Villa</option>
+            <option value="apartment" <%= listing.category === 'apartment' ? 'selected' : '' %>>Apartment</option>
+            <option value="cottage" <%= listing.category === 'cottage' ? 'selected' : '' %>>Cottage</option>
+            <option value="studio" <%= listing.category === 'studio' ? 'selected' : '' %>>Studio</option>
+          </select>
+        </div>
 
-          <div class="mb-3">
-            <label class="form-label">Image URL</label>
-            <input name="listing[image]" value="<%= listing.image %>" type="text" class="form-control" required />
-            <div class="mt-3 text-center">
-              <img id="imagePreview" src="<%= listing.image %>" alt="Image preview" class="img-fluid shadow-sm" />
-            </div>
-          </div>
+        <!-- Price -->
+        <div class="mb-3">
+          <label class="form-label">Price (per night)</label>
+          <input name="listing[price]" value="<%= listing.price %>" type="number" class="form-control" min="1" required />
+        </div>
 
-          <div class="mb-3">
-            <label class="form-label">Category</label>
-            <select name="listing[category]" class="form-select" required>
-              <option value="villa" <%= listing.category === 'villa' ? 'selected' : '' %>>Villa</option>
-              <option value="apartment" <%= listing.category === 'apartment' ? 'selected' : '' %>>Apartment</option>
-              <option value="cottage" <%= listing.category === 'cottage' ? 'selected' : '' %>>Cottage</option>
-              <option value="studio" <%= listing.category === 'studio' ? 'selected' : '' %>>Studio</option>
-            </select>
-          </div>
+        <!-- Country -->
+        <div class="mb-3">
+          <label class="form-label">Country</label>
+          <input name="listing[country]" value="<%= listing.country %>" type="text" class="form-control" required />
+        </div>
 
-          <div class="mb-3">
-            <label class="form-label">Price (per night)</label>
-            <input name="listing[price]" value="<%= listing.price %>" type="number" class="form-control" min="1" required />
-          </div>
+        <!-- Location -->
+        <div class="mb-4">
+          <label class="form-label">Location</label>
+          <input name="listing[location]" value="<%= listing.location %>" type="text" class="form-control" required />
+        </div>
 
-          <div class="mb-3">
-            <label class="form-label">Country</label>
-            <input name="listing[country]" value="<%= listing.country %>" type="text" class="form-control" required />
-          </div>
-
-          <div class="mb-4">
-            <label class="form-label">Location</label>
-            <input name="listing[location]" value="<%= listing.location %>" type="text" class="form-control" required />
-          </div>
-
-          <div class="text-center">
-            <button class="btn btn-primary btn-lg px-5" type="submit">Update Listing</button>
-          </div>
-        </form>
-      </div>
+        <!-- Submit -->
+        <div class="text-center">
+          <button class="btn btn-primary btn-lg" type="submit">
+            <i class="fa-solid fa-save me-2"></i>Update Listing
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
 
-    <script>
-      document.querySelector('[name="listing[image]"]').addEventListener('input', function () {
-        document.getElementById('imagePreview').src = this.value;
-      });
-    </script>
+  <script>
+    document.querySelector('[name="listing[image]"]').addEventListener('input', function () {
+      document.getElementById('imagePreview').src = this.value;
+    });
+  </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
-  </body>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
