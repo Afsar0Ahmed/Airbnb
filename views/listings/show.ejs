@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Wanderlust - Listing Details</title>
+  <title>Airnb - Listing Details</title>
 
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" />
@@ -18,31 +18,76 @@
       background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e') no-repeat center center fixed;
       background-size: cover;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      animation: fadeIn 1.2s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .bg-glass {
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.88);
       border-radius: 15px;
       padding: 20px;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(10px);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .bg-glass:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
     }
 
     .card-img-top {
       border-top-left-radius: 15px;
       border-top-right-radius: 15px;
+      transition: transform 0.4s ease;
+    }
+    .card-img-top:hover {
+      transform: scale(1.05);
     }
 
-    .btn-outline-primary:hover, .btn-primary:hover {
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    /* Buttons */
+    .btn {
+      transition: all 0.25s ease-in-out;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    .btn-outline-primary:hover, .btn-primary:hover, .btn-success:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+    }
+    .btn-outline-danger:hover {
+      background: #ff4d4d;
+      color: white;
+      transform: translateY(-2px);
     }
 
     a.btn i {
       margin-right: 6px;
     }
 
+    /* Inputs & Textarea */
     textarea:focus, input:focus {
-      box-shadow: 0 0 5px rgba(0, 123, 255, 0.5) !important;
+      box-shadow: 0 0 8px rgba(0, 123, 255, 0.5) !important;
       border-color: #80bdff !important;
+      transform: scale(1.01);
+    }
+
+    /* Review Form */
+    .review-box {
+      background: #f9f9f9;
+      border-radius: 12px;
+      border: 1px solid #eee;
+      transition: box-shadow 0.3s ease;
+    }
+    .review-box:hover {
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+    }
+
+    h4.card-title {
+      color: #ff4d4d;
     }
   </style>
 </head>
@@ -59,6 +104,7 @@
       </a>
     </div>
 
+    <!-- Card -->
     <div class="card bg-glass mx-auto" style="max-width: 32rem;">
       <img src="<%= listing.image %>" class="card-img-top" alt="Listing Image">
 
@@ -90,7 +136,7 @@
         </a>
 
         <!-- Review Form -->
-        <div class="bg-white p-4 rounded shadow-sm">
+        <div class="review-box p-4 mt-4">
           <h5 class="mb-3 text-primary"><i class="fa-solid fa-comment-dots"></i> Leave a Review</h5>
           <form action="/listings/<%= listing._id %>/review" method="POST">
             <div class="mb-3">
